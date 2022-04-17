@@ -1,0 +1,50 @@
+name: Run Slither analysis
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install slither
+        run: pip3 install slither-analyzer
+
+      - name: Add ethereum repository
+        run: sudo add-apt-repository ppa:ethereum/ethereum
+        
+      - name: update ubuntu packages
+        run: sudo apt-get update
+        
+      - name: Install SOLC 
+        run: sudo apt-get install solc
+        
+      # Debugging
+      - name: Current workspace 
+        run: | 
+          ls -l
+          pwd
+      
+      # Slither output is considered error, redirect it to a file
+      - name: Run slither  
+        run: slither . 2> ./analysis.txt
+        continue-on-error: true
+
+     # Upload analysis artifact   
+      - name: Upload result
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: analysis.txt
+          path: ./analysis.txt
+      
+      - name: Final greeting, job status
+        run: echo "Job finished. Status ${{ job.status }}."
